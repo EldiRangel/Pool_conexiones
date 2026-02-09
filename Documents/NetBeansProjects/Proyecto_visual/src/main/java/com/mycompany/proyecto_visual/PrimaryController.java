@@ -7,7 +7,7 @@ import javafx.scene.control.PasswordField;
 
 public class PrimaryController {
 
-    // Estos nombres deben coincidir con el fx:id que pusiste en Scene Builder
+    
     @FXML
     private TextField txtHost;
     @FXML
@@ -17,11 +17,11 @@ public class PrimaryController {
     @FXML
     private TextField txtUsuario;
     @FXML
-    private PasswordField txtContra; // Si usaste PasswordField en el diseño
+    private PasswordField txtContra; 
     @FXML
     private TextField txtTabla;
 
-    // Este es el método que el FXML no encontraba
+    
     @FXML
     private void handleConectar() {
         String host = txtHost.getText();
@@ -33,7 +33,7 @@ public class PrimaryController {
 
         System.out.println("Intentando conectar a: " + host + ":" + puerto);
         
-        // Aquí llamaremos a tu clase DB_conexion más adelante
+        
         if (DB_conexion.conectar(host, puerto, db, user, pass) != null) {
             System.out.println("¡Conexión exitosa a la tabla " + tabla + "!");
         } else {
