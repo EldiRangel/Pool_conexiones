@@ -5,24 +5,27 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
 import java.io.IOException;
+import java.sql.Connection;
 
-/**
- * JavaFX App
- */
 public class App extends Application {
 
     private static Scene scene;
+    
+   
+    public static Connection conexionGlobal = null;
 
     @Override
     public void start(Stage stage) throws IOException {
+        
         scene = new Scene(loadFXML("primary"), 640, 480);
+        stage.setTitle("Conexión al Supermercado");
         stage.setScene(scene);
         stage.show();
     }
 
-    static void setRoot(String fxml) throws IOException {
+    // Método entre la pantalla de login y la del CRUD
+    public static void setRoot(String fxml) throws IOException {
         scene.setRoot(loadFXML(fxml));
     }
 
@@ -34,5 +37,4 @@ public class App extends Application {
     public static void main(String[] args) {
         launch();
     }
-
 }

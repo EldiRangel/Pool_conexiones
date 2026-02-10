@@ -15,12 +15,12 @@ public class CConexionBD {
     String ip = "localhost";
     String puerto = "5432";
     
-    // Cadena corregida para PostgreSQL
+    
     String cadena = "jdbc:postgresql://" + ip + ":" + puerto + "/" + bd;
     
     public Connection establecerConexion() {
         try {
-            // Driver corregido para Postgres
+            
             Class.forName("org.postgresql.Driver");
             conectar = DriverManager.getConnection(cadena, usuario, contrasena);
             System.out.println(" Conexión exitosa a la base de datos");
