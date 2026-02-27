@@ -6,7 +6,7 @@ import java.util.concurrent.*;
 public class Engine {
     private ExecutorService executor;
 
-    public void iniciar(boolean pooled, String url, String user, String pass, String query, int samples, int retries, int poolSize) {
+    public Metrics iniciar(boolean pooled, String url, String user, String pass, String query, int samples, int retries, int minIdle, int poolSize) {
         Metrics m = new Metrics();
         CountDownLatch start = new CountDownLatch(1);
         CountDownLatch done = new CountDownLatch(samples);
@@ -18,6 +18,8 @@ public class Engine {
             config.setJdbcUrl(url); 
             config.setUsername(user); 
             config.setPassword(pass);
+            
+            config.setMinimumIdle(minIdle);
             config.setMaximumPoolSize(poolSize);
             ds = new HikariDataSource(config);
         }
@@ -30,9 +32,8 @@ public class Engine {
         start.countDown();  
 
         try {
-            
             if (!done.await(60, TimeUnit.SECONDS)) {
-                System.out.println("[!] La simulacion tardo demasiado. Aplicando freno.");
+                System.out.println("[!] La simulacion tardo demasiado. Aplicando freno por timeout.");
                 executor.shutdownNow();
             }
         } catch (InterruptedException e) {
@@ -44,5 +45,7 @@ public class Engine {
         
         if (ds != null) ds.close();
         executor.shutdown();
+        
+        return m; 
     }
 }

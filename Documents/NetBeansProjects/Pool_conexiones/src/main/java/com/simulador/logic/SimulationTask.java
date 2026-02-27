@@ -31,7 +31,8 @@ public class SimulationTask implements Runnable {
             int intento = 0;
             boolean exito = false;
 
-            while (intento <= maxRetries && !exito) {
+            // --- AQUÍ ESTÁ EL FRENO MANUAL INYECTADO ---
+            while (intento <= maxRetries && !exito && !com.visual.pool_conexiones.App.stopRequested) {
                 intento++;
                 try (Connection conn = (pool != null) ? pool.getConnection() : DriverManager.getConnection(url, user, pass);
                      Statement stmt = conn.createStatement()) {
@@ -42,13 +43,23 @@ public class SimulationTask implements Runnable {
                 }
             }
 
-            if (exito) metrics.exitosas.incrementAndGet(); else metrics.fallidas.incrementAndGet();
-            metrics.totalRetries.addAndGet(intento - 1);
+            // Lógica para registrar bien las métricas si se activó el freno
+            if (exito && !com.visual.pool_conexiones.App.stopRequested) {
+                metrics.exitosas.incrementAndGet();
+            } else {
+                metrics.fallidas.incrementAndGet();
+            }
+            
+            int intentosExtra = (intento > 0) ? (intento - 1) : 0;
+            metrics.totalRetries.addAndGet(intentosExtra);
 
             // Registro en archivo Log 
             synchronized (SimulationTask.class) {
                 try (PrintWriter out = new PrintWriter(new FileWriter("simulacion.log", true))) {
-                    out.printf("[%s] %s - %s - Intento: %d\n", LocalDateTime.now(), id, (exito ? "EXITOSA" : "FALLIDA"), intento);
+                    String estado = (exito && !com.visual.pool_conexiones.App.stopRequested) ? "EXITOSA" : "FALLIDA";
+                    if (com.visual.pool_conexiones.App.stopRequested) estado = "DETENIDA"; // Si lo frenaste tú
+                    
+                    out.printf("[%s] %s - %s - Intento: %d\n", LocalDateTime.now(), id, estado, intento);
                 }
             }
         } catch (Exception e) {
