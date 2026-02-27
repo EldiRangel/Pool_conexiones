@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.text.Font?>
+
+<VBox spacing="10" alignment="TOP_CENTER" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.visual.pool_conexiones.PrimaryController">
+   <padding>
+      <Insets top="15" right="15" bottom="15" left="15"/>
+   </padding>
+
+   <Label text="Simulador de Conexiones DB">
+      <font><Font name="System Bold" size="18.0" /></font>
+   </Label>
+
+   <Separator />
+
+   <HBox spacing="15" alignment="CENTER_LEFT">
+      <Label text="Tipo de Consulta:" />
+      <ComboBox fx:id="cbQuery" prefWidth="150" />
+      <CheckBox fx:id="chkIterative" text="Activar modo de estrés iterativo (100, 500, 1000)" />
+   </HBox>
+
+   <HBox spacing="10" alignment="CENTER_LEFT">
+      <Button fx:id="btnStart" text="Iniciar Simulación" onAction="#runSimulation" prefWidth="150" />
+      <Button text="Detener (Freno Manual)" onAction="#stopSimulation" prefWidth="170" />
+   </HBox>
+
+   <Separator />
+
+   <VBox spacing="5" VBox.vgrow="ALWAYS">
+      <Label text="Resultados de la simulación:" style="-fx-font-weight: bold;" />
+      <TextArea fx:id="txtConsole" editable="false" VBox.vgrow="ALWAYS" style="-fx-font-family: monospace;" wrapText="true" />
+   </VBox>
+
+</VBox>
