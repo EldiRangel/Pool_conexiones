@@ -1,50 +1,40 @@
 package com.simulador.logic;
 
-import com.zaxxer.hikari.*;
 import java.util.concurrent.*;
 
 public class Engine {
     private ExecutorService executor;
 
-    public Metrics iniciar(boolean pooled, String url, String user, String pass, String query, int samples, int retries, int minIdle, int poolSize) {
+    public Metrics iniciar(boolean pooled, String url, String user, String pass, String query, 
+                           int samples, int retries, int poolSize) {
         Metrics m = new Metrics();
         CountDownLatch start = new CountDownLatch(1);
         CountDownLatch done = new CountDownLatch(samples);
-        executor = Executors.newFixedThreadPool(samples);
+        executor = Executors.newFixedThreadPool(50); 
 
-        HikariDataSource ds = null;
-        if (pooled) {
-            HikariConfig config = new HikariConfig();
-            config.setJdbcUrl(url); 
-            config.setUsername(user); 
-            config.setPassword(pass);
-            
-            config.setMinimumIdle(minIdle);
-            config.setMaximumPoolSize(poolSize);
-            ds = new HikariDataSource(config);
-        }
-
-        for (int i = 0; i < samples; i++) {
-            executor.submit(new SimulationTask(i, url, user, pass, query, retries, start, done, m, ds));
-        }
-
-        long inicio = System.currentTimeMillis();
-        start.countDown();  
-
+        CustomPool myPool = null;
         try {
-            if (!done.await(60, TimeUnit.SECONDS)) {
-                System.out.println("[!] La simulacion tardo demasiado. Aplicando freno por timeout.");
-                executor.shutdownNow();
+            if (pooled) {
+                String urlLimpia = url.contains("?") ? url : url + "?sslmode=disable";
+                myPool = new CustomPool(urlLimpia, user, pass, poolSize);
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
 
-        m.tiempoTotal = System.currentTimeMillis() - inicio;
-        m.imprimirReporte(pooled ? "POOLED" : "RAW", samples);
-        
-        if (ds != null) ds.close();
-        executor.shutdown();
+            for (int i = 0; i < samples; i++) {
+                executor.submit(new SimulationTask(i, url, user, pass, query, retries, start, done, m, myPool));
+            }
+
+            long inicio = System.currentTimeMillis();
+            start.countDown();  
+
+            done.await(30, TimeUnit.SECONDS);
+            m.tiempoTotal = System.currentTimeMillis() - inicio;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (myPool != null) myPool.closeAll();
+            executor.shutdownNow();
+        }
         
         return m; 
     }

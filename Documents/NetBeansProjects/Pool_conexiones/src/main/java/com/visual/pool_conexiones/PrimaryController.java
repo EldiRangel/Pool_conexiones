@@ -22,10 +22,14 @@ public class PrimaryController {
         cbQuery.getItems().addAll("SELECT", "INSERT", "UPDATE");
         cbQuery.getSelectionModel().selectFirst();
         
-        try (InputStream is = App.class.getClassLoader().getResourceAsStream("config.properties")) {
-            config.load(is);
+        try (InputStream is = getClass().getResourceAsStream("/config.properties")) {
+            if (is != null) {
+                config.load(is);
+            } else {
+                updateConsole("Error: No se encontro config.properties en resources");
+            }
         } catch (Exception e) {
-            updateConsole("Error al cargar config.properties");
+            updateConsole("Error al cargar configuracion");
         }
     }
 
@@ -39,7 +43,6 @@ public class PrimaryController {
         String user = config.getProperty("db.user");
         String pass = config.getProperty("db.password");
         int retries = Integer.parseInt(config.getProperty("simulation.maxRetries"));
-        int minIdle = Integer.parseInt(config.getProperty("db.pool.minIdle"));
         int poolSize = Integer.parseInt(config.getProperty("db.pool.maxSize"));
         
         String tipoQuery = cbQuery.getValue().toLowerCase();
@@ -50,45 +53,51 @@ public class PrimaryController {
 
         Engine engine = new Engine();
 
-     
         new Thread(() -> {
             for (int samples : iterativeSamples) {
                 if (App.stopRequested) break;
 
-                updateConsole("\n>>> INICIANDO ESCALA: " + samples + " MUESTRAS (" + tipoQuery.toUpperCase() + ") <<<");
+                updateConsole("\n>>> INICIANDO: " + samples + " MUESTRAS (" + tipoQuery.toUpperCase() + ") <<<");
                 
                 updateConsole("[RAW] Procesando...");
-                Metrics rawM = engine.iniciar(false, url, user, pass, currentQuery, samples, retries, minIdle, poolSize);
+                Metrics rawM = engine.iniciar(false, url, user, pass, currentQuery, samples, retries, poolSize);
 
                 if (App.stopRequested) break;
-                try { Thread.sleep(1500); } catch (InterruptedException e) {}
+                
+                try { Thread.sleep(1000); } catch (InterruptedException e) {}
 
                 updateConsole("[POOLED] Procesando...");
-                Metrics pooledM = engine.iniciar(true, url, user, pass, currentQuery, samples, retries, minIdle, poolSize);
+                Metrics pooledM = engine.iniciar(true, url, user, pass, currentQuery, samples, retries, poolSize);
 
                 mostrarComparativa(samples, rawM, pooledM);
             }
             
-            updateConsole("\n>>> SIMULACIÓN FINALIZADA. Revisa simulacion.log <<<");
+            updateConsole("\n>>> PROCESO TERMINADO. Revisa simulacion.log <<<");
             Platform.runLater(() -> btnStart.setDisable(false));
             
         }).start();
     }
 
     private void mostrarComparativa(int s, Metrics r, Metrics p) {
-        updateConsole("\n--- RESULTADO DE " + s + " MUESTRAS ---");
-        updateConsole("Tiempo RAW: " + r.tiempoTotal + "ms | Tiempo POOLED: " + p.tiempoTotal + "ms");
-        if (p.tiempoTotal < r.tiempoTotal) {
-            updateConsole("🏆 POOLED ganó por " + (r.tiempoTotal - p.tiempoTotal) + "ms.");
+        updateConsole("\nRESULTADOS " + s + " MUESTRAS ");
+        updateConsole("Tiempo RAW: " + r.tiempoTotal + "ms");
+        updateConsole("Tiempo POOLED: " + p.tiempoTotal + "ms");
+        
+        if (p.exitosas.get() > 0 || r.exitosas.get() > 0) {
+            if (p.tiempoTotal < r.tiempoTotal) {
+                updateConsole("RESULTADO: POOLED fue mas rapido por " + (r.tiempoTotal - p.tiempoTotal) + "ms");
+            } else {
+                updateConsole("RESULTADO: RAW fue mas rapido");
+            }
         } else {
-            updateConsole("🏆 RAW fue más rápido.");
+            updateConsole("AVISO: Ambas pruebas fallaron. Revisa la conexion a la base de datos.");
         }
     }
 
     @FXML
     private void stopSimulation() {
         App.stopRequested = true;
-        updateConsole("\n[!] FRENO MANUAL ACTIVADO DESDE LA INTERFAZ [!]");
+        updateConsole("\n[!] DETENCION MANUAL SOLICITADA [!]");
     }
 
     private void updateConsole(String text) {
