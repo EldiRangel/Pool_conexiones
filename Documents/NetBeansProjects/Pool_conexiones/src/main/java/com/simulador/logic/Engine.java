@@ -15,8 +15,8 @@ public class Engine {
         CustomPool myPool = null;
         try {
             if (pooled) {
-                String urlLimpia = url.contains("?") ? url : url + "?sslmode=disable";
-                myPool = new CustomPool(urlLimpia, user, pass, poolSize);
+                // Pasamos la URL directa porque ya viene limpia desde el config.properties
+                myPool = new CustomPool(url, user, pass, poolSize);
             }
 
             for (int i = 0; i < samples; i++) {
@@ -26,11 +26,11 @@ public class Engine {
             long inicio = System.currentTimeMillis();
             start.countDown();  
 
-            done.await(30, TimeUnit.SECONDS);
+            done.await(10, TimeUnit.MINUTES);
             m.tiempoTotal = System.currentTimeMillis() - inicio;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Error en motor: " + e.getMessage());
         } finally {
             if (myPool != null) myPool.closeAll();
             executor.shutdownNow();

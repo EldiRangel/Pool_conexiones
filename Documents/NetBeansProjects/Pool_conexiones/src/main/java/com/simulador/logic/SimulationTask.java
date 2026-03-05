@@ -1,10 +1,7 @@
 package com.simulador.logic;
 
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.concurrent.CountDownLatch;
-import java.io.FileWriter;
-import java.io.PrintWriter;
 
 public class SimulationTask implements Runnable {
     private String id, url, user, pass, query;
@@ -62,13 +59,12 @@ public class SimulationTask implements Runnable {
             
             metrics.totalRetries.addAndGet(Math.max(0, intento - 1));
 
-            synchronized (SimulationTask.class) {
-                try (PrintWriter out = new PrintWriter(new FileWriter("simulacion.log", true))) {
-                    String estado = (exito && !com.visual.pool_conexiones.App.stopRequested) ? "EXITOSA" : "FALLIDA";
-                    if (com.visual.pool_conexiones.App.stopRequested) estado = "DETENIDA";
-                    out.printf("[%s] %s - %s - Intento: %d\n", LocalDateTime.now(), id, estado, intento);
-                }
-            }
+            // ACA ESTA EL ARREGLO DEL LOG:
+            String estado = (exito && !com.visual.pool_conexiones.App.stopRequested) ? "EXITOSA" : "FALLIDA";
+            if (com.visual.pool_conexiones.App.stopRequested) estado = "DETENIDA";
+            
+            metrics.guardarLog(id, query, estado);
+
         } catch (Exception e) {
         } finally {
             doneLatch.countDown();

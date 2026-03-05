@@ -78,11 +78,19 @@ public class PrimaryController {
         }).start();
     }
 
+    // Modificado para mostrar conteo de queries exitosas y fallidas
     private void mostrarComparativa(int s, Metrics r, Metrics p) {
-        updateConsole("\nRESULTADOS " + s + " MUESTRAS ");
-        updateConsole("Tiempo RAW: " + r.tiempoTotal + "ms");
-        updateConsole("Tiempo POOLED: " + p.tiempoTotal + "ms");
+        updateConsole("\n>>> RESULTADOS " + s + " MUESTRAS <<<");
         
+        updateConsole("--- MODO RAW ---");
+        updateConsole("Tiempo: " + r.tiempoTotal + "ms");
+        updateConsole("Exitosas: " + r.exitosas.get() + " | Fallidas: " + r.fallidas.get());
+        
+        updateConsole("--- MODO POOLED ---");
+        updateConsole("Tiempo: " + p.tiempoTotal + "ms");
+        updateConsole("Exitosas: " + p.exitosas.get() + " | Fallidas: " + p.fallidas.get());
+        
+        updateConsole("------------------------");
         if (p.exitosas.get() > 0 || r.exitosas.get() > 0) {
             if (p.tiempoTotal < r.tiempoTotal) {
                 updateConsole("RESULTADO: POOLED fue mas rapido por " + (r.tiempoTotal - p.tiempoTotal) + "ms");
@@ -90,7 +98,7 @@ public class PrimaryController {
                 updateConsole("RESULTADO: RAW fue mas rapido");
             }
         } else {
-            updateConsole("AVISO: Ambas pruebas fallaron. Revisa la conexion a la base de datos.");
+            updateConsole("AVISO: Ambas pruebas fallaron. Revisa la conexion.");
         }
     }
 
