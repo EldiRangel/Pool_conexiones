@@ -59,7 +59,7 @@ public class SimulationTask implements Runnable {
             
             metrics.totalRetries.addAndGet(Math.max(0, intento - 1));
 
-            // ACA ESTA EL ARREGLO DEL LOG:
+            // metodo de conexion 
             String estado = (exito && !com.visual.pool_conexiones.App.stopRequested) ? "EXITOSA" : "FALLIDA";
             if (com.visual.pool_conexiones.App.stopRequested) estado = "DETENIDA";
             
