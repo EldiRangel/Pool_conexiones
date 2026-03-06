@@ -10,13 +10,13 @@ public class CustomPool {
     private final BlockingQueue<Connection> pool;
     private final String url, user, pass;
 
-    public CustomPool(String url, String user, String pass, int size) throws SQLException {
+    public CustomPool(String url, String user, String pass, int minIdle, int maxSize) throws SQLException {
         this.url = url;
         this.user = user;
         this.pass = pass;
-        this.pool = new LinkedBlockingQueue<>(size);
+        this.pool = new LinkedBlockingQueue<>(maxSize);
         
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < maxSize; i++) {
             pool.add(crearNuevaConexion());
         }
     }
@@ -26,12 +26,32 @@ public class CustomPool {
     }
 
     public Connection getConnection() throws InterruptedException {
-        return pool.take(); 
+        Connection conn = pool.take(); 
+        
+        try {
+            if (conn.isClosed()) {
+                conn = crearNuevaConexion();
+            }
+        } catch (SQLException e) {
+            try {
+                conn = crearNuevaConexion(); 
+            } catch (SQLException ex) {}
+        }
+        
+        return conn;
     }
 
     public void releaseConnection(Connection conn) {
         if (conn != null) {
-            pool.offer(conn); 
+            try {
+                if (!conn.isClosed()) {
+                    pool.offer(conn); 
+                } else {
+                    pool.offer(crearNuevaConexion()); 
+                }
+            } catch (SQLException e) {
+                try { pool.offer(crearNuevaConexion()); } catch (SQLException ex) {}
+            }
         }
     }
 

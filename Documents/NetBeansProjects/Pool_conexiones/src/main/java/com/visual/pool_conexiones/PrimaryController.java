@@ -39,14 +39,19 @@ public class PrimaryController {
         txtConsole.clear();
         btnStart.setDisable(true); 
         
+        Metrics.limpiarLog();
+        
         String url = config.getProperty("db.url");
         String user = config.getProperty("db.user");
         String pass = config.getProperty("db.password");
         int retries = Integer.parseInt(config.getProperty("simulation.maxRetries"));
         int poolSize = Integer.parseInt(config.getProperty("db.pool.maxSize"));
+        int minIdle = Integer.parseInt(config.getProperty("db.pool.minIdle", "2")); 
         
         String tipoQuery = cbQuery.getValue().toLowerCase();
-        String currentQuery = config.getProperty("query." + tipoQuery);
+        
+        // Metemos la consulta elegida en un arreglo de 1 posición para que Engine la acepte
+        String[] queriesToRun = new String[]{ config.getProperty("db.query." + tipoQuery) };
         
         int baseSamples = Integer.parseInt(config.getProperty("simulation.samples"));
         int[] iterativeSamples = chkIterative.isSelected() ? new int[]{100, 500, 1000} : new int[]{baseSamples};
@@ -60,14 +65,14 @@ public class PrimaryController {
                 updateConsole("\n>>> INICIANDO: " + samples + " MUESTRAS (" + tipoQuery.toUpperCase() + ") <<<");
                 
                 updateConsole("[RAW] Procesando...");
-                Metrics rawM = engine.iniciar(false, url, user, pass, currentQuery, samples, retries, poolSize);
+                Metrics rawM = engine.iniciar(false, url, user, pass, queriesToRun, samples, retries, minIdle, poolSize);
 
                 if (App.stopRequested) break;
                 
                 try { Thread.sleep(1000); } catch (InterruptedException e) {}
 
                 updateConsole("[POOLED] Procesando...");
-                Metrics pooledM = engine.iniciar(true, url, user, pass, currentQuery, samples, retries, poolSize);
+                Metrics pooledM = engine.iniciar(true, url, user, pass, queriesToRun, samples, retries, minIdle, poolSize);
 
                 mostrarComparativa(samples, rawM, pooledM);
             }
@@ -95,7 +100,7 @@ public class PrimaryController {
             if (p.tiempoTotal < r.tiempoTotal) {
                 updateConsole("RESULTADO: POOLED fue mas rapido por " + (r.tiempoTotal - p.tiempoTotal) + "ms");
             } else {
-                updateConsole("RESULTADO: RAW fue mas rapido");
+                updateConsole("RESULTADO: RAW fue mas rapido por " + (p.tiempoTotal - r.tiempoTotal) + "ms");
             }
         } else {
             updateConsole("AVISO: Ambas pruebas fallaron. Revisa la conexion.");

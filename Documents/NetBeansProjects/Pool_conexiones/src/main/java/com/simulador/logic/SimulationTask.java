@@ -4,17 +4,18 @@ import java.sql.*;
 import java.util.concurrent.CountDownLatch;
 
 public class SimulationTask implements Runnable {
-    private String id, url, user, pass, query;
+    private String id, url, user, pass;
+    private String[] queries; 
     private int maxRetries;
     private CountDownLatch startLatch, doneLatch;
     private Metrics metrics;
     private CustomPool customPool;
 
-    public SimulationTask(int i, String url, String user, String pass, String query, int retries, 
+    public SimulationTask(int i, String url, String user, String pass, String[] queries, int retries, 
                           CountDownLatch start, CountDownLatch done, Metrics m, CustomPool pool) {
         this.id = "ID-" + i;
         this.url = url; this.user = user; this.pass = pass;
-        this.query = query; this.maxRetries = retries;
+        this.queries = queries; this.maxRetries = retries;
         this.startLatch = start; this.doneLatch = done;
         this.metrics = m; this.customPool = pool;
     }
@@ -37,7 +38,10 @@ public class SimulationTask implements Runnable {
                     }
 
                     try (Statement stmt = conn.createStatement()) {
-                        stmt.execute(query);
+                        
+                        for (String q : queries) {
+                            stmt.execute(q);
+                        }
                         exito = true;
                     }
                 } catch (Exception e) {
@@ -59,11 +63,10 @@ public class SimulationTask implements Runnable {
             
             metrics.totalRetries.addAndGet(Math.max(0, intento - 1));
 
-            // metodo de conexion 
             String estado = (exito && !com.visual.pool_conexiones.App.stopRequested) ? "EXITOSA" : "FALLIDA";
             if (com.visual.pool_conexiones.App.stopRequested) estado = "DETENIDA";
             
-            metrics.guardarLog(id, query, estado);
+            metrics.guardarLog(id, queries.length > 1 ? "MULTI-QUERY" : "SINGLE-QUERY", estado + " (Intento: " + intento + ")");
 
         } catch (Exception e) {
         } finally {

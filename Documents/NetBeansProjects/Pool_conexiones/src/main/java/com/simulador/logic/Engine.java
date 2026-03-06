@@ -5,25 +5,26 @@ import java.util.concurrent.*;
 public class Engine {
     private ExecutorService executor;
 
-    public Metrics iniciar(boolean pooled, String url, String user, String pass, String query, 
-                           int samples, int retries, int poolSize) {
+    public Metrics iniciar(boolean pooled, String url, String user, String pass, String[] queries, 
+                           int samples, int retries, int minIdle, int poolSize) {
         Metrics m = new Metrics();
         CountDownLatch start = new CountDownLatch(1);
         CountDownLatch done = new CountDownLatch(samples);
-        executor = Executors.newFixedThreadPool(50); 
+        
+        executor = Executors.newFixedThreadPool(samples); 
 
         CustomPool myPool = null;
         try {
             if (pooled) {
-                // Pasamos la URL directa porque ya viene limpia desde el config.properties
-                myPool = new CustomPool(url, user, pass, poolSize);
+                myPool = new CustomPool(url, user, pass, minIdle, poolSize);
             }
 
             for (int i = 0; i < samples; i++) {
-                executor.submit(new SimulationTask(i, url, user, pass, query, retries, start, done, m, myPool));
+                executor.submit(new SimulationTask(i, url, user, pass, queries, retries, start, done, m, myPool));
             }
 
             long inicio = System.currentTimeMillis();
+            
             start.countDown();  
 
             done.await(10, TimeUnit.MINUTES);

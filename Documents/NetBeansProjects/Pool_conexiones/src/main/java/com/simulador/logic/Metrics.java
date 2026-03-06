@@ -14,12 +14,22 @@ public class Metrics {
     public long tiempoTotal;
     
     // Ruta hacia la carpeta de lógica y formato de fecha
-    private final String rutaLog = "src/main/java/com/simulador/logic/simulacion.log";
+    private static final String RUTA_LOG = "src/main/java/com/simulador/logic/simulacion.log";
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    public static void limpiarLog() {
+        try (PrintWriter out = new PrintWriter(new FileWriter(RUTA_LOG, false))) {
+            out.print(""); 
+        } catch (IOException e) {
+            try (PrintWriter out = new PrintWriter(new FileWriter("simulacion.log", false))) {
+                out.print(""); 
+            } catch (IOException ex) {}
+        }
+    }
 
     // Método para escribir cada intento en el archivo
     public synchronized void guardarLog(String idTarea, String query, String estado) {
-        try (PrintWriter out = new PrintWriter(new FileWriter(rutaLog, true))) {
+        try (PrintWriter out = new PrintWriter(new FileWriter(RUTA_LOG, true))) {
             String fecha = dtf.format(LocalDateTime.now());
             out.printf("[%s] Tarea: %s | Query: %s | Estado: %s%n", fecha, idTarea, query, estado);
             out.flush();
